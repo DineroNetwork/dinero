@@ -730,11 +730,11 @@ namespace nodetool
     std::set<std::string> full_addrs;
     if (m_nettype == cryptonote::TESTNET)
     {
-      full_addrs.insert("176.9.0.187:28080");
-      full_addrs.insert("192.99.8.110:28080");
-      full_addrs.insert("37.187.74.171:28080");
-      full_addrs.insert("88.99.195.15:28080");
-      full_addrs.insert("5.104.84.64:28080");
+      full_addrs.insert("51.38.236.156:28080");
+      full_addrs.insert("57.131.20.58:28080");
+      full_addrs.insert("37.187.28.176:28080");
+      full_addrs.insert("37.187.253.199:28080");
+      full_addrs.insert("213.199.44.115:28080");
     }
     else if (m_nettype == cryptonote::STAGENET)
     {
@@ -744,20 +744,19 @@ namespace nodetool
       full_addrs.insert("88.99.195.15:38080");
       full_addrs.insert("5.104.84.64:38080");
     }
-    else if (m_nettype == cryptonote::FAKECHAIN)
-    {
-    }
-    else
-    {
-      full_addrs.insert("176.9.0.187:18080");
-      full_addrs.insert("88.198.163.90:18080");
-      full_addrs.insert("192.99.8.110:18080");
-      full_addrs.insert("37.187.74.171:18080");
-      full_addrs.insert("88.99.195.15:18080");
-      full_addrs.insert("5.104.84.64:18080");
-    }
-    return full_addrs;
+  else if (m_nettype == cryptonote::FAKECHAIN)
+  {
   }
+  else
+  {
+    full_addrs.insert("51.38.236.156:48080");
+    full_addrs.insert("57.131.20.58:48080");
+    full_addrs.insert("37.187.28.176:48080");
+    full_addrs.insert("37.187.253.199:48080");
+    full_addrs.insert("213.199.44.115:48080");
+  }
+  return full_addrs;
+}
   //-----------------------------------------------------------------------------------
   template<class t_payload_net_handler>
   std::set<std::string> node_server<t_payload_net_handler>::get_dns_seed_nodes()

@@ -80,33 +80,36 @@ namespace cryptonote {
     return CRYPTONOTE_MAX_TX_SIZE;
   }
   //-----------------------------------------------------------------------------------------------
-  bool get_block_reward(size_t median_weight, size_t current_block_weight, uint64_t already_generated_coins, uint64_t &reward, uint8_t version) {
-    static_assert(DIFFICULTY_TARGET_V2%60==0&&DIFFICULTY_TARGET_V1%60==0,"difficulty targets must be a multiple of 60");
-    const int target = version < 2 ? DIFFICULTY_TARGET_V1 : DIFFICULTY_TARGET_V2;
-    const int target_minutes = target / 60;
-    const int emission_speed_factor = EMISSION_SPEED_FACTOR_PER_MINUTE - (target_minutes-1);
-
-    uint64_t base_reward = (MONEY_SUPPLY - already_generated_coins) >> emission_speed_factor;
-    if (base_reward < FINAL_SUBSIDY_PER_MINUTE*target_minutes)
-    {
-      base_reward = FINAL_SUBSIDY_PER_MINUTE*target_minutes;
-    }
-
+  bool get_block_reward(uint64_t height, size_t median_weight, size_t current_block_weight, uint64_t already_generated_coins, uint64_t &reward, uint8_t version) {
     uint64_t full_reward_zone = get_min_block_weight(version);
 
-    //make it soft
+    // make it soft
     if (median_weight < full_reward_zone) {
       median_weight = full_reward_zone;
-    }
-
-    if (current_block_weight <= median_weight) {
-      reward = base_reward;
-      return true;
     }
 
     if(current_block_weight > 2 * median_weight) {
       MERROR("Block cumulative weight is too big: " << current_block_weight << ", expected less than " << 2 * median_weight);
       return false;
+    }
+
+    uint64_t base_reward = 0;
+    if (already_generated_coins < MONEY_SUPPLY)
+    {
+      const uint64_t halvings = height / EMISSION_HALVING_INTERVAL;
+      if (halvings < 64)
+        base_reward = EMISSION_INITIAL_SUBSIDY >> halvings;
+      else
+        base_reward = 0;
+
+      const uint64_t remaining = MONEY_SUPPLY - already_generated_coins;
+      if (base_reward > remaining)
+        base_reward = remaining;
+    }
+
+    if (current_block_weight <= median_weight) {
+      reward = base_reward;
+      return true;
     }
 
     uint64_t product_hi;
@@ -121,7 +124,7 @@ namespace cryptonote {
     div128_64(product_hi, product_lo, median_weight, &reward_hi, &reward_lo, NULL, NULL);
     div128_64(reward_hi, reward_lo, median_weight, &reward_hi, &reward_lo, NULL, NULL);
     assert(0 == reward_hi);
-    assert(reward_lo < base_reward);
+    assert(reward_lo < base_reward || base_reward == 0);
 
     reward = reward_lo;
     return true;

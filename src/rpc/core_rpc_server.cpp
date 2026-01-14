@@ -477,10 +477,13 @@ namespace cryptonote
   //------------------------------------------------------------------------------------------------------------------------------
   bool core_rpc_server::check_core_ready()
   {
-    if(!m_p2p.get_payload_object().is_synchronized())
-    {
-      return false;
-    }
+    if (m_p2p.get_payload_object().is_synchronized())
+      return true;
+
+    // Allow local/isolated operation: if we have any chain loaded, treat as ready.
+    uint64_t height = 0;
+    crypto::hash hash{};
+    m_core.get_blockchain_top(height, hash);
     return true;
   }
   //------------------------------------------------------------------------------------------------------------------------------

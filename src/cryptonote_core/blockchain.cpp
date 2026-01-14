@@ -85,7 +85,7 @@ DISABLE_VS_WARNINGS(4267)
 #define MERROR_VER(x) MCERROR("verify", x)
 
 // used to overestimate the block reward when estimating a per kB to use
-#define BLOCK_REWARD_OVERESTIMATE (10 * 1000000000000)
+#define BLOCK_REWARD_OVERESTIMATE (10 * COIN)
 
 //------------------------------------------------------------------
 Blockchain::Blockchain(tx_memory_pool& tx_pool) :
@@ -1376,7 +1376,7 @@ bool Blockchain::prevalidate_miner_transaction(const block& b, uint64_t height, 
 }
 //------------------------------------------------------------------
 // This function validates the miner transaction reward
-bool Blockchain::validate_miner_transaction(const block& b, size_t cumulative_block_weight, uint64_t fee, uint64_t& base_reward, uint64_t already_generated_coins, bool &partial_block_reward, uint8_t version)
+bool Blockchain::validate_miner_transaction(const block& b, size_t cumulative_block_weight, uint64_t fee, uint64_t& base_reward, uint64_t already_generated_coins, uint64_t height, bool &partial_block_reward, uint8_t version)
 {
   LOG_PRINT_L3("Blockchain::" << __func__);
   //validate reward
@@ -1384,6 +1384,14 @@ bool Blockchain::validate_miner_transaction(const block& b, size_t cumulative_bl
   for (auto& o: b.miner_tx.vout)
     money_in_use += o.amount;
   partial_block_reward = false;
+
+  // Allow the compiled-in genesis coinbase regardless of the new emission curve.
+  // Record the actual emitted amount so supply tracking remains consistent.
+  if (height == 0)
+  {
+    base_reward = money_in_use - fee;
+    return true;
+  }
 
   if (version == 3) {
     for (auto &o: b.miner_tx.vout) {
@@ -1405,7 +1413,7 @@ bool Blockchain::validate_miner_transaction(const block& b, size_t cumulative_bl
     get_last_n_blocks_weights(last_blocks_weights, CRYPTONOTE_REWARD_BLOCKS_WINDOW);
     median_weight = epee::misc_utils::median(last_blocks_weights);
   }
-  if (!get_block_reward(median_weight, cumulative_block_weight, already_generated_coins, base_reward, version))
+  if (!get_block_reward(height, median_weight, cumulative_block_weight, already_generated_coins, base_reward, version))
   {
     MERROR_VER("block weight " << cumulative_block_weight << " is bigger than allowed for this blockchain");
     return false;
@@ -1675,7 +1683,7 @@ bool Blockchain::create_block_template(block& b, const crypto::hash *from_block,
 
   size_t txs_weight;
   uint64_t fee;
-  if (!m_tx_pool.fill_block_template(b, median_weight, already_generated_coins, txs_weight, fee, expected_reward, b.major_version))
+  if (!m_tx_pool.fill_block_template(b, height, median_weight, already_generated_coins, txs_weight, fee, expected_reward, b.major_version))
   {
     return false;
   }
@@ -3569,7 +3577,7 @@ bool Blockchain::check_fee(size_t tx_weight, uint64_t fee) const
     median = m_current_block_cumul_weight_limit / 2;
     const uint64_t blockchain_height = m_db->height();
     already_generated_coins = blockchain_height ? m_db->get_block_already_generated_coins(blockchain_height - 1) : 0;
-    if (!get_block_reward(median, 1, already_generated_coins, base_reward, version))
+    if (!get_block_reward(blockchain_height, median, 1, already_generated_coins, base_reward, version))
       return false;
   }
 
@@ -3660,7 +3668,7 @@ void Blockchain::get_dynamic_base_fee_estimate_2021_scaling(uint64_t grace_block
 
   uint64_t already_generated_coins = db_height ? m_db->get_block_already_generated_coins(db_height - 1) : 0;
   uint64_t base_reward;
-  if (!get_block_reward(m_current_block_cumul_weight_limit / 2, 1, already_generated_coins, base_reward, version))
+  if (!get_block_reward(db_height, m_current_block_cumul_weight_limit / 2, 1, already_generated_coins, base_reward, version))
   {
     MERROR("Failed to determine block reward, using placeholder " << print_money(BLOCK_REWARD_OVERESTIMATE) << " as a high bound");
     base_reward = BLOCK_REWARD_OVERESTIMATE;
@@ -4248,7 +4256,7 @@ leave:
   TIME_MEASURE_START(vmt);
   uint64_t base_reward = 0;
   uint64_t already_generated_coins = blockchain_height ? m_db->get_block_already_generated_coins(blockchain_height - 1) : 0;
-  if(!validate_miner_transaction(bl, cumulative_block_weight, fee_summary, base_reward, already_generated_coins, bvc.m_partial_block_reward, m_hardfork->get_current_version()))
+  if(!validate_miner_transaction(bl, cumulative_block_weight, fee_summary, base_reward, already_generated_coins, blockchain_height, bvc.m_partial_block_reward, m_hardfork->get_current_version()))
   {
     MERROR_VER("Block with id: " << id << " has incorrect miner transaction");
     bvc.m_verifivation_failed = true;
