@@ -749,11 +749,11 @@ namespace nodetool
   }
   else
   {
-    full_addrs.insert("51.38.236.156:88080");
-    full_addrs.insert("57.131.20.58:88080");
-    full_addrs.insert("37.187.28.176:88080");
-    full_addrs.insert("37.187.253.199:88080");
-    full_addrs.insert("213.199.44.115:88080");
+    full_addrs.insert("51.38.236.156:58080");
+    full_addrs.insert("57.131.20.58:58080");
+    full_addrs.insert("37.187.28.176:58080");
+    full_addrs.insert("37.187.253.199:58080");
+    full_addrs.insert("213.199.44.115:58080");
   }
   return full_addrs;
 }
