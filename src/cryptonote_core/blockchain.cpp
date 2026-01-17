@@ -5437,7 +5437,7 @@ void Blockchain::cancel()
 #if defined(PER_BLOCK_CHECKPOINT)
 static const char expected_block_hashes_hash[] = "06c61040ace2d58086f1f8f0c0a78881a71c88f2814307b19f881ef92680f6e0";
 static const char monero_mainnet_genesis_tx[] = "013c01ff0001ffffffffffff03029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd08807121017767aafcde9be00dcfd098715ebcf7f410daebc582fda69d24a28e9d0bc890d1";
-static constexpr uint32_t monero_mainnet_genesis_nonce = 2751356999;
+static constexpr uint32_t monero_mainnet_genesis_nonce = 10000;
 
 static bool is_monero_mainnet_genesis()
 {
